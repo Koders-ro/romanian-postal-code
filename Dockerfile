@@ -1,6 +1,9 @@
-# syntax=docker/dockerfile:1
+# The Go image is pulled from Google's Docker Hub mirror, so builds don't depend
+# on Docker Hub (auth outages, pull rate limits). It is the same official image.
+# Override with: --build-arg GO_IMAGE=golang:1.25-alpine
+ARG GO_IMAGE=mirror.gcr.io/library/golang:1.25-alpine
 
-FROM golang:1.25-alpine AS build
+FROM ${GO_IMAGE} AS build
 WORKDIR /src
 COPY go.mod ./
 COPY cmd ./cmd
