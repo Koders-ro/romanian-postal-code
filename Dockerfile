@@ -14,8 +14,8 @@ RUN CGO_ENABLED=0 go build -trimpath -buildvcs=false \
 FROM scratch
 COPY --from=build /out/server /server
 USER 65534:65534
-ENV PORT=8080
-EXPOSE 8080
+ENV PORT=3000
+EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/server", "-healthcheck"]
 STOPSIGNAL SIGTERM
 ENTRYPOINT ["/server"]

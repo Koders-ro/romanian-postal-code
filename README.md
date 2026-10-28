@@ -41,10 +41,13 @@ Number ranges keep the parity of their first number:
 ## Run
 
 ```bash
-cp .env.example .env               # set API_KEY
-docker compose up -d --build
-curl -H "X-API-Key: $API_KEY" localhost:8080/v1/codes/400693
+docker build -t ro-postal .
+docker run -e API_KEY=secret -p 3000:3000 ro-postal
+curl -H "X-API-Key: secret" localhost:3000/v1/codes/400693
 ```
+
+`docker-compose.yml` is made for Coolify. It only exposes port 3000 to the proxy network.
+To use it on a machine without a proxy, add `ports: ["3000:3000"]`.
 
 Without Docker (Go 1.23+):
 
@@ -55,20 +58,22 @@ API_KEY=secret go run ./cmd/server
 ### Deploy on Coolify
 
 1. **New Resource → Public/Private Git repository**, then pick this repo.
-2. Choose the **Dockerfile** build pack. Docker Compose also works, using `docker-compose.yml`.
-3. Set the port to **8080** and add the env var `API_KEY`.
+2. Choose a build pack:
+   - **Dockerfile:** keep **Ports Exposes = 3000**, which is Coolify's default and the app's default.
+     Leave **Ports Mappings** empty, and don't set `PORT`.
+   - **Docker Compose:** set the service's domain as `https://your.domain:3000`.
+     The `:3000` tells Coolify's proxy which container port to use; the public URL stays on 443.
+3. Add the env vars `API_KEY` and `TRUST_PROXY=true`.
 4. Deploy. The image has a built-in `HEALTHCHECK`, and `/healthz` needs no auth.
 
-Any Docker host works the same way:
-```bash
-docker build -t ro-postal .
-docker run -e API_KEY=secret -p 8080:8080 ro-postal
-```
+If the deployment shows *"no available server"* or a 502, the port Coolify routes to doesn't match the
+port the app listens on (`PORT`, default 3000). If it fails with *"port is already allocated"*, remove
+any **Ports Mappings**. They publish the port on the host, which the proxy doesn't need.
 
 | Env | Default | |
 |---|---|---|
 | `API_KEY` | — | **Required.** The server refuses to start without it. Use a long random value (`openssl rand -hex 32`). Comma-separate several keys to rotate them without downtime. |
-| `PORT` | `8080` | |
+| `PORT` | `3000` | Port the server listens on inside the container. |
 | `MAX_BATCH` | `500` | Maximum items per batch request. |
 | `RATE_LIMIT` | `0` (off) | Requests per minute per client IP on `/v1/*`, with a burst of about 10 seconds' worth. Over the limit, the server returns `429` with `Retry-After`. |
 | `TRUST_PROXY` | `false` | Set to `true` behind Coolify/Traefik, nginx or Cloudflare, so logs and rate limits use the real client IP from `X-Forwarded-For`. Leave it `false` if the port is exposed directly. |
@@ -111,7 +116,7 @@ All responses are JSON and are gzipped when the client accepts it.
 ### `GET /v1/codes/{code}`: validate and decode a code
 
 ```bash
-curl -H "X-API-Key: $K" localhost:8080/v1/codes/020881
+curl -H "X-API-Key: $K" localhost:3000/v1/codes/020881
 ```
 ```json
 {
@@ -142,7 +147,7 @@ All fields are optional. Send whatever you have: `code`, `county`, `city`, `stre
 The number can also be part of `street`.
 
 ```bash
-curl -G -H "X-API-Key: $K" localhost:8080/v1/verify \
+curl -G -H "X-API-Key: $K" localhost:3000/v1/verify \
   --data-urlencode "code=020876" --data-urlencode "city=Bucuresti" \
   --data-urlencode "street=cal. mosilor 120"
 ```
@@ -176,7 +181,7 @@ Counties are accepted by name or 2-letter code, e.g. `CJ`, `jud. Cluj`, `B`.
 `POST` takes the same fields as JSON:
 ```bash
 curl -H "X-API-Key: $K" -d '{"county":"CJ","city":"Cluj-Napoca","street":"Str. General Eremia Grigorescu","number":"10"}' \
-  localhost:8080/v1/verify
+  localhost:3000/v1/verify
 ```
 
 ### `POST /v1/verify/batch`
@@ -187,13 +192,13 @@ This returns `{"results": [...]}`, one verify result per item.
 
 ### `GET /v1/lookup?county=&city=&street=&number=`: address → code
 ```bash
-curl -G -H "X-API-Key: $K" localhost:8080/v1/lookup --data-urlencode "city=Sector 2" --data-urlencode "street=mosilor 255"
+curl -G -H "X-API-Key: $K" localhost:3000/v1/lookup --data-urlencode "city=Sector 2" --data-urlencode "street=mosilor 255"
 # {"found":true,"codes":["020878"],"matches":[...], ...}
 ```
 
 ### `GET /v1/normalize?street=&city=&county=&code=`: debugging helper
 ```bash
-curl -G -H "X-API-Key: $K" localhost:8080/v1/normalize --data-urlencode "street=B-dul Ion C. Brătianu nr. 5A bl. 3 ap. 12"
+curl -G -H "X-API-Key: $K" localhost:3000/v1/normalize --data-urlencode "street=B-dul Ion C. Brătianu nr. 5A bl. 3 ap. 12"
 # {"street":{"type":"bulevardul","name":"ion c bratianu","key":"bratianucion","number":"5a","block":"3", ...}}
 ```
 

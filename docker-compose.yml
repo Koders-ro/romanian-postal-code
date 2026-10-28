@@ -4,13 +4,17 @@ services:
     restart: unless-stopped
     environment:
       API_KEY: ${API_KEY:?set API_KEY}
-      PORT: ${PORT:-3000}
+      PORT: "3000"
       MAX_BATCH: ${MAX_BATCH:-500}
       RATE_LIMIT: ${RATE_LIMIT:-0}
-      TRUST_PROXY: ${TRUST_PROXY:-false}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-    ports:
-      - "${PORT:-3000}:${PORT:-3000}"
+    # Coolify's proxy reaches the container over the Docker network, so the
+    # port is only exposed, not published on the host (avoids "port is
+    # already allocated"). For plain `docker compose` without a proxy, add:
+    #   ports: ["3000:3000"]
+    expose:
+      - "3000"
     read_only: true
     security_opt:
       - no-new-privileges:true

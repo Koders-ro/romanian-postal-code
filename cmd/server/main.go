@@ -3,7 +3,7 @@
 // Environment:
 //
 //	API_KEY      required; one key, or several separated by commas (for rotation)
-//	PORT         listen port (default 8080)
+//	PORT         listen port (default 3000)
 //	MAX_BATCH    max items per /v1/verify/batch request (default 500)
 //	RATE_LIMIT   requests per minute per client IP on /v1/* (default 0 = off)
 //	TRUST_PROXY  "true" to read the client IP from X-Forwarded-For (behind Coolify/Traefik, nginx...)
@@ -38,7 +38,7 @@ func main() {
 	flag.Parse()
 
 	if *healthcheck {
-		os.Exit(probe(env("PORT", "8080")))
+		os.Exit(probe(env("PORT", "3000")))
 	}
 	if err := run(); err != nil {
 		slog.Error("fatal", "error", err)
@@ -113,7 +113,7 @@ func config() (api.Config, string, error) {
 		return cfg, "", errors.New("API_KEY environment variable is required")
 	}
 
-	port := env("PORT", "8080")
+	port := env("PORT", "3000")
 	if p, err := strconv.Atoi(port); err != nil || p < 1 || p > 65535 {
 		return cfg, "", fmt.Errorf("PORT: invalid value %q", port)
 	}
