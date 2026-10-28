@@ -4,13 +4,13 @@ services:
     restart: unless-stopped
     environment:
       API_KEY: ${API_KEY:?set API_KEY}
-      PORT: ${PORT:-8080}
+      PORT: ${PORT:-3000}
       MAX_BATCH: ${MAX_BATCH:-500}
       RATE_LIMIT: ${RATE_LIMIT:-0}
       TRUST_PROXY: ${TRUST_PROXY:-false}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
-      - "${PORT:-8080}:${PORT:-8080}"
+      - "${PORT:-3000}:${PORT:-3000}"
     read_only: true
     security_opt:
       - no-new-privileges:true
